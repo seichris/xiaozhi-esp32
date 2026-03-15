@@ -1,15 +1,13 @@
 #include "ml307_board.h"
 
-#include "application.h"
+#include "audio_codec.h"
 #include "display.h"
-#include "assets/lang_config.h"
 
 #include <esp_log.h>
 #include <esp_timer.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <font_awesome.h>
-#include <opus_encoder.h>
 #include <utility>
 
 static const char *TAG = "Ml307Board";
@@ -67,8 +65,6 @@ void Ml307Board::OnNetworkEvent(NetworkEvent event, const std::string& data) {
 }
 
 void Ml307Board::NetworkTask() {
-    auto& application = Application::GetInstance();
-
     // Notify modem detection started
     OnNetworkEvent(NetworkEvent::ModemDetecting);
 
@@ -93,7 +89,7 @@ void Ml307Board::NetworkTask() {
 
     // Set up network state change callback
     // Note: Don't call GetCarrierName() here as it sends AT command and will block ReceiveTask
-    modem_->OnNetworkStateChanged([this, &application](bool network_ready) {
+    modem_->OnNetworkStateChanged([this](bool network_ready) {
         if (network_ready) {
             OnNetworkEvent(NetworkEvent::Connected);
         } else {
@@ -155,13 +151,13 @@ const char* Ml307Board::GetNetworkStateIcon() {
     int csq = modem_->GetCsq();
     if (csq == -1) {
         return FONT_AWESOME_SIGNAL_OFF;
-    } else if (csq >= 0 && csq <= 14) {
+    } else if (csq >= 0 && csq <= 9) {
         return FONT_AWESOME_SIGNAL_WEAK;
-    } else if (csq >= 15 && csq <= 19) {
+    } else if (csq >= 10 && csq <= 14) {
         return FONT_AWESOME_SIGNAL_FAIR;
-    } else if (csq >= 20 && csq <= 24) {
+    } else if (csq >= 15 && csq <= 19) {
         return FONT_AWESOME_SIGNAL_GOOD;
-    } else if (csq >= 25 && csq <= 31) {
+    } else if (csq >= 20 && csq <= 31) {
         return FONT_AWESOME_SIGNAL_STRONG;
     }
 
